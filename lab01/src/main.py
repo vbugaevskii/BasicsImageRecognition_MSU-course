@@ -79,7 +79,7 @@ if __name__ == "__main__":
         os.mkdir(dst_dir)
 
     script_dir = os.path.dirname(os.path.realpath(__file__))
-    clf = joblib.load(os.path.join(src_dir, '../data/clf_model_vertices.model'))
+    clf = joblib.load(os.path.join(script_dir, '../data/clf_model_vertices.model'))
 
     pool = Pool(processes=min(len(images), 5))
     pool.map(process_image_wrapper, zip(images_src, images_dst))
