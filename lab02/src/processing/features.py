@@ -97,7 +97,7 @@ def percentile_hand_pixels_intensity(img_gray, img_hand, percentile):
     return stats_mask_pixels_intesity(img_gray, img_hand, lambda x: np.percentile(x, percentile))
 
 
-def wavelet_transform(img, wavelet='haar', steps=3, pool=4):
+def wavelet_transform(img, wavelet='haar', steps=2, pool=4):
     tempf = np.zeros_like(img)
     energies = []
 
@@ -109,13 +109,13 @@ def wavelet_transform(img, wavelet='haar', steps=3, pool=4):
         img[np.where(np.logical_and(low < img, img < high))] = 0
         return img
 
-    LL = img
+    LL = img / 255.0
     for i in range(steps):
         LL, (LH, HL, HH) = dwt2(LL, wavelet=wavelet)
 
-        LH = filter_frequencies(LH, 5, 95)
-        HL = filter_frequencies(HL, 5, 95)
-        HH = filter_frequencies(HH, 5, 95)
+#         LH = filter_frequencies(LH, 5, 95)
+#         HL = filter_frequencies(HL, 5, 95)
+#         HH = filter_frequencies(HH, 5, 95)
 
         row_step, col_step = LL.shape[0] // pool, LL.shape[1] // pool
         for row in range(0, LL.shape[0], row_step):
@@ -126,13 +126,14 @@ def wavelet_transform(img, wavelet='haar', steps=3, pool=4):
                     HH[row:row + row_step, col:col + col_step]
                 ]))
 
+        LH, HL, HH = map(scale_image_pixels, map(np.abs, [LH, HL, HH]))
+
         tempf[0:LL.shape[0], 0:LL.shape[1]] = LL
         tempf[0:LH.shape[0], LL.shape[1]:LL.shape[1] + LH.shape[1]] = LH
         tempf[LL.shape[0]:LL.shape[0] + HL.shape[0], 0:HL.shape[1]] = HL
         tempf[LL.shape[0]:LL.shape[0] + HH.shape[0], LL.shape[1]:LL.shape[1] + HH.shape[1]] = HH
 
-    tempf = np.log(1.0 + np.abs(tempf))
-    tempf = (tempf - tempf.min()) / (tempf.max() - tempf.min())
+    tempf[0:LL.shape[0], 0:LL.shape[1]] = scale_image_pixels(LL)
     tempf = scale_image_pixels(tempf)
 
     return tempf, energies
